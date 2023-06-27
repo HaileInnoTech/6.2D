@@ -2,12 +2,8 @@
   <div class="container mx-auto" ref="main" :style="{ height: height + 'px' }">
     <div class="col-6 mx-auto bg-main">
       <div class="row">
-        <img
-          src="../images/Screenshot_2023-06-23_115513-transformed.png"
-          style="width: 50%; height: auto"
-          class="rounded mx-auto d-block"
-          alt="..."
-        />
+        <img src="../images/Screenshot_2023-06-23_115513-transformed.png" style="width: 50%; height: auto"
+          class="rounded mx-auto d-block" alt="..." />
       </div>
 
       <div class="row">
@@ -15,47 +11,21 @@
       </div>
 
       <div class="row">
-        <form
-          @submit="checkForm"
-          method="post"
-          action="http://mercury.swin.edu.au/it000000/formtest.php"
-          novalidate
-        >
+        <form @submit.prevent="checkForm" method="post" novalidate>
           <div class="mb-3 px-5">
             <label for="fullname" class="form-label">Full name</label>
-            <input
-              type="fullname"
-              class="form-control"
-              v-bind:name="fullname"
-              id="fullname"
-              v-model="fullname"
-            />
+            <input type="fullname" class="form-control" name="fullname" id="fullname" v-model="fullname" />
           </div>
           <div class="mb-3 px-5">
             <label for="email" class="form-label">Email </label>
-            <input
-              type="text"
-              class="form-control"
-              v-bind:name="email"
-              id="email"
-              v-model="email"
-            />
+            <input type="text" class="form-control" name="email" id="email" v-model="email" />
           </div>
           <div class="mb-3 px-5">
             <label for="password" class="form-label">Password</label>
-            <input
-              type="password"
-              class="form-control"
-              v-bind:name="password"
-              id="passwork"
-              v-model="password"
-            />
+            <input type="password" class="form-control" name="password" id="password" v-model="password" />
           </div>
           <div class="position-relative mt-5">
-            <button
-              type="submit"
-              class="btn btn-primary btn-lg position-absolute top-50 start-50 translate-middle"
-            >
+            <button type="submit" class="btn btn-primary btn-lg position-absolute top-50 start-50 translate-middle">
               Sign up
             </button>
           </div>
@@ -63,22 +33,25 @@
       </div>
 
       <div class="row mt-5 text-center">
-        <p>I'm already a member</p>
-        <span><a href="/signin">Sign In</a></span>
+        <div class="col">
+          <div class="d-flex justify-content-center align-items-center">
+            <span class="mr-5">Already a member</span>
+            <a href="/signin" class="ms-2">Sign In</a>
+          </div>
+        </div>
       </div>
       <br />
       <div v-if="errors.length">
         <p class="ms-5">Please correct the following error(s)</p>
         <ul style="list-style-type: none" class="px-5 pb-4">
-          <li
-            v-for="(error, index) in errors"
-            :key="index"
-            class="alert alert-danger"
-            role="alear"
-          >
+          <li v-for="(error, index) in errors" :key="index" class="alert alert-danger" role="alert">
             {{ error }}
           </li>
         </ul>
+      </div>
+
+      <div v-if="result" class="px-5 pb-4">
+        <p class="alert alert-success" role="alert ">Successfull</p>
       </div>
     </div>
   </div>
@@ -88,20 +61,38 @@
 export default {
   data() {
     return {
+      records: [],
+      result: false,
+      errors: [],
+      height: null,
       fullname: "",
       email: "",
       password: "",
-      errors: [],
-      height: null,
     };
   },
   mounted() {
     this.setHeight();
+    const jsonData = localStorage.getItem("formRecords");
+    if (jsonData) {
+      const formRecords = JSON.parse(jsonData);
+      this.records = formRecords;
+    }
   },
   methods: {
     checkForm: function (e) {
       var result = true;
       this.errors = [];
+
+      const recordExists = this.records.some((record) => {
+        return record.fullname === this.fullname || record.email === this.email;
+      });
+      if (recordExists) {
+        result = false;
+        this.errors.push(
+          "Record already exists with the same Fullname and Email."
+        );
+      }
+
       if (!this.fullname.trim()) {
         result = false;
         this.errors.push("Please enter the Fullname.");
@@ -130,8 +121,21 @@ export default {
         result = false;
         this.errors.push("Please enter a valid email address");
       }
-      if (!result) {
-        e.preventDefault();
+      if (result) {
+        // If there are no errors, create a formData object and push it to the records array
+        const formData = {
+          fullname: this.fullname,
+          email: this.email,
+          password: this.password,
+        };
+        this.records.push(formData);
+        // Clear the form fields
+        this.fullname = "";
+        this.email = "";
+        this.password = "";
+        // Save the records array to localStorage
+        const jsonData = JSON.stringify(this.records);
+        localStorage.setItem("formRecords", jsonData);
       }
     },
     setHeight() {
@@ -149,6 +153,7 @@ export default {
 .height {
   height: 700px;
 }
+
 a:hover {
   color: rgb(160, 22, 146);
   text-decoration: none;
