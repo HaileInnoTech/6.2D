@@ -2,8 +2,12 @@
   <div class="container mx-auto" ref="main" :style="{ height: height + 'px' }">
     <div class="col-6 mx-auto bg-main">
       <div class="row">
-        <img src="../images/Screenshot_2023-06-23_115513-transformed.png" style="width: 50%; height: auto"
-          class="rounded mx-auto d-block" alt="..." />
+        <img
+          src="../images/Screenshot_2023-06-23_115513-transformed.png"
+          style="width: 50%; height: auto"
+          class="rounded mx-auto d-block"
+          alt="..."
+        />
       </div>
 
       <div class="row">
@@ -14,18 +18,39 @@
         <form @submit.prevent="checkForm" method="post" novalidate>
           <div class="mb-3 px-5">
             <label for="fullname" class="form-label">Full name</label>
-            <input type="fullname" class="form-control" name="fullname" id="fullname" v-model="fullname" />
+            <input
+              type="fullname"
+              class="form-control"
+              name="fullname"
+              id="fullname"
+              v-model="fullname"
+            />
           </div>
           <div class="mb-3 px-5">
             <label for="email" class="form-label">Email </label>
-            <input type="text" class="form-control" name="email" id="email" v-model="email" />
+            <input
+              type="text"
+              class="form-control"
+              name="email"
+              id="email"
+              v-model="email"
+            />
           </div>
           <div class="mb-3 px-5">
             <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" name="password" id="password" v-model="password" />
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              id="password"
+              v-model="password"
+            />
           </div>
           <div class="position-relative mt-5">
-            <button type="submit" class="btn btn-primary btn-lg position-absolute top-50 start-50 translate-middle">
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg position-absolute top-50 start-50 translate-middle"
+            >
               Sign up
             </button>
           </div>
@@ -44,20 +69,27 @@
       <div v-if="errors.length">
         <p class="ms-5">Please correct the following error(s)</p>
         <ul style="list-style-type: none" class="px-5 pb-4">
-          <li v-for="(error, index) in errors" :key="index" class="alert alert-danger" role="alert">
+          <li
+            v-for="(error, index) in errors"
+            :key="index"
+            class="alert alert-danger"
+            role="alert"
+          >
             {{ error }}
           </li>
         </ul>
       </div>
 
-      <div v-if="result" class="px-5 pb-4">
-        <p class="alert alert-success" role="alert ">Successfull</p>
+      <div v-if="showSuccessNotification" class="px-5 pb-4">
+        <p class="alert alert-success" role="alert">Successfully signed up!</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../firebase/config";
 export default {
   data() {
     return {
@@ -68,6 +100,7 @@ export default {
       fullname: "",
       email: "",
       password: "",
+      showSuccessNotification: false,
     };
   },
   mounted() {
@@ -122,22 +155,35 @@ export default {
         this.errors.push("Please enter a valid email address");
       }
       if (result) {
-        // If there are no errors, create a formData object and push it to the records array
         const formData = {
           fullname: this.fullname,
           email: this.email,
           password: this.password,
         };
-        this.records.push(formData);
-        // Clear the form fields
+        this.showSuccessNotification = true; // Set the flag to display the notification
+
+        // this.records.push(formData);
+        // // Clear the form fields
+        // this.fullname = "";
+        // this.email = "";
+        // this.password = "";
+        // // Save the records array to localStorage
+        // const jsonData = JSON.stringify(this.records);
+        // localStorage.setItem("formRecords", jsonData);
+        try {
+          const docRef = addDoc(collection(db, "users"), formData);
+          console.log("Document written with ID: ", docRef.id);
+        } catch (e) {
+          console.error("Error adding document: ", e);
+        }
         this.fullname = "";
         this.email = "";
         this.password = "";
-        // Save the records array to localStorage
-        const jsonData = JSON.stringify(this.records);
-        localStorage.setItem("formRecords", jsonData);
+      } else {
+        this.showSuccessNotification = false; // Set the flag to display the notification
       }
     },
+
     setHeight() {
       this.height = this.$refs.main.clientHeight;
     },
