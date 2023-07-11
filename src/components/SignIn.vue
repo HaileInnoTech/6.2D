@@ -41,7 +41,7 @@
               type="submit"
               class="btn btn-primary btn-lg position-absolute top-50 start-50 translate-middle"
             >
-              Sign up
+              Sign in
             </button>
           </div>
         </form>
@@ -74,6 +74,8 @@
 </template>
 
 <script>
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/config";
 export default {
   data() {
     return {
@@ -88,11 +90,13 @@ export default {
   },
   mounted() {
     this.setHeight();
-    const jsonData = localStorage.getItem("formRecords");
-    if (jsonData) {
-      const formRecords = JSON.parse(jsonData);
-      this.records = formRecords;
-    }
+
+    // save to local memory
+    // const jsonData = localStorage.getItem("formRecords");
+    // if (jsonData) {
+    //   const formRecords = JSON.parse(jsonData);
+    //   this.records = formRecords;
+    // }
   },
   methods: {
     checkForm: function (e) {
@@ -108,22 +112,41 @@ export default {
         result = false;
         this.errors.push("Please enter a valid email address");
       } else if (this.password && this.email) {
-        const recordExists = this.records.some((record) => {
-          return (
-            record.password === this.password && record.email === this.email
-          );
-        });
-        if (recordExists) {
-          this.$router.push("/Homepage");
-        } else {
-          this.errors.push("Email and password are incorrect");
-        }
+        // const recordExists = this.records.some((record) => {
+        //   return (
+        //     record.password === this.password && record.email === this.email
+        //   );
+        // });
+        // if (recordExists) {
+        //   this.$router.push("/Homepage");
+        // } else {
+        //   this.errors.push("Email and password are incorrect");
+        // }
+        const usersRef = collection(db, "users");
+        getDocs(usersRef)
+          .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+              const { email, password } = doc.data();
+              if (email === this.email && password === this.password) {
+                // Redirect to the homepage if there is a match
+                this.$router.push("/homepage");
+              }
+            });
+            this.errors.push("Email and password do not match");
+          })
+          .catch((error) => {
+            console.error("Error getting documents: ", error);
+          });
       }
 
       if (!this.password) {
         result = false;
         this.errors.push("Please enter the Password.");
       }
+      // Get a reference to the collection
+      const usersRef = collection(db, "users");
+
+      // Retrieve all documents in the collection
     },
     setHeight() {
       this.height = this.$refs.main.clientHeight;

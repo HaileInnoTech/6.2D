@@ -81,14 +81,16 @@
       </div>
 
       <div v-if="showSuccessNotification" class="px-5 pb-4">
-        <p class="alert alert-success" role="alert">Successfully signed up!</p>
+        <p v-if="success" class="alert alert-success" role="alert">
+          {{ success }}
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { addDoc, collection } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase/config";
 export default {
   data() {
@@ -100,31 +102,22 @@ export default {
       fullname: "",
       email: "",
       password: "",
+      success: null,
       showSuccessNotification: false,
     };
   },
   mounted() {
     this.setHeight();
-    const jsonData = localStorage.getItem("formRecords");
-    if (jsonData) {
-      const formRecords = JSON.parse(jsonData);
-      this.records = formRecords;
-    }
+    // const jsonData = localStorage.getItem("formRecords");
+    // if (jsonData) {
+    //   const formRecords = JSON.parse(jsonData);
+    //   this.records = formRecords;
+    // }
   },
   methods: {
     checkForm: function (e) {
       var result = true;
       this.errors = [];
-
-      const recordExists = this.records.some((record) => {
-        return record.fullname === this.fullname || record.email === this.email;
-      });
-      if (recordExists) {
-        result = false;
-        this.errors.push(
-          "Record already exists with the same Fullname and Email."
-        );
-      }
 
       if (!this.fullname.trim()) {
         result = false;
@@ -160,8 +153,6 @@ export default {
           email: this.email,
           password: this.password,
         };
-        this.showSuccessNotification = true; // Set the flag to display the notification
-
         // this.records.push(formData);
         // // Clear the form fields
         // this.fullname = "";
@@ -170,12 +161,25 @@ export default {
         // // Save the records array to localStorage
         // const jsonData = JSON.stringify(this.records);
         // localStorage.setItem("formRecords", jsonData);
-        try {
-          const docRef = addDoc(collection(db, "users"), formData);
-          console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-          console.error("Error adding document: ", e);
-        }
+        this.checkEmailExists(this.email)
+          .then((emailExists) => {
+            if (emailExists === true) {
+              this.errors.push("Email already exists");
+              this.showSuccessNotification = false; // Set the flag to display the notification
+            } else {
+              addDoc(collection(db, "users"), formData)
+                .then(() => {
+                  this.showSuccessNotification = true; // Set the flag to display the notification
+                  this.showSuccess("Successfully signed up!");
+                })
+                .catch((error) => {
+                  console.error("Error adding document: ", error);
+                });
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking email: ", error);
+          });
         this.fullname = "";
         this.email = "";
         this.password = "";
@@ -184,8 +188,27 @@ export default {
       }
     },
 
+    showSuccess(message) {
+      this.success = message;
+      setTimeout(() => {
+        this.$router.push("/signin");
+      }, 2000);
+    },
+
     setHeight() {
       this.height = this.$refs.main.clientHeight;
+    },
+
+    async checkEmailExists(inputEmail) {
+      const usersRef = collection(db, "users");
+      const querySnapshot = await getDocs(usersRef);
+      for (const doc of querySnapshot.docs) {
+        const email = doc.data().email;
+        if (email == inputEmail) {
+          return true;
+        }
+      }
+      return false;
     },
   },
 };
