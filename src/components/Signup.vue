@@ -61,7 +61,7 @@
         <div class="col">
           <div class="d-flex justify-content-center align-items-center">
             <span class="mr-5">Already a member</span>
-            <a href="/signin" class="ms-2">Sign In</a>
+            <router-link to="/signin" class="ms-2">Sign Up</router-link>
           </div>
         </div>
       </div>
